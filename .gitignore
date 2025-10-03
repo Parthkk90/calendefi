@@ -19,6 +19,10 @@ dist/
 .env.test.local
 .env.production.local
 
+calendefi/agent/tokens.json
+calendefi/agent/.env.aptos
+calendefi/agent/.env
+
 # IDE and editors
 .vscode/
 .idea/
