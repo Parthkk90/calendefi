@@ -1,0 +1,8 @@
+{
+  "access_token": "your_google_oauth_access_token_here",
+  "refresh_token": "your_google_oauth_refresh_token_here", 
+  "scope": "https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/calendar.events",
+  "token_type": "Bearer",
+  "refresh_token_expires_in": 604799,
+  "expiry_date": 0
+}

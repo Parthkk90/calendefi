@@ -103,10 +103,15 @@ temp/
 private-keys/
 wallets/
 
-# Google API credentials
+# Google API credentials and OAuth tokens
 credentials.json
 token.json
+tokens.json
 client_secret*.json
+.env.aptos
+.env.local
+.env.development.local
+.env.production.local
 
 # Test files
 test-results/
