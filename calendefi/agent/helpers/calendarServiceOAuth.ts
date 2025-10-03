@@ -5,7 +5,10 @@ import path from "path";
 export class CalendarServiceOAuth {
   public calendarInstance: calendar_v3.Calendar;
   private oauth2Client: any;
-  private readonly SCOPES = ['https://www.googleapis.com/auth/calendar'];
+  private readonly SCOPES = [
+    'https://www.googleapis.com/auth/calendar',
+    'https://www.googleapis.com/auth/calendar.events'
+  ];
   private readonly TOKEN_PATH = path.join(__dirname, '../tokens.json');
 
   constructor() {
@@ -39,12 +42,15 @@ export class CalendarServiceOAuth {
   }
 
   /**
-   * Get authorization URL
+   * Get authorization URL with proper parameters
    */
   getAuthUrl(): string {
     return this.oauth2Client.generateAuthUrl({
       access_type: 'offline',
       scope: this.SCOPES,
+      response_type: 'code',
+      include_granted_scopes: true,
+      prompt: 'consent'
     });
   }
 

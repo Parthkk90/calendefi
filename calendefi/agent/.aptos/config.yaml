@@ -1,0 +1,8 @@
+---
+profiles:
+  calendefi:
+    private_key: "0x777580ddcfc94351d776fad2970809e8763a0211be49cb4f006c2eec312ab1e3"
+    public_key: "0xec3ce518afb28c1b39e2e9aeae5a22b53d005b6e806968b04fbdaf87ec281386"
+    account: 5cde772759e6872bf4de85ed6bf51cd19250e7406d92378e5322971d8cef22a8
+    rest_url: "https://fullnode.testnet.aptoslabs.com"
+    faucet_url: "https://faucet.testnet.aptoslabs.com"

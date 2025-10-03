@@ -1,5 +1,8 @@
 import { AptosAccount, AptosClient, CoinClient, FaucetClient, HexString } from "aptos";
-import { CalendarService } from "./calendarService";
+// Note: CalendarService import updated to be compatible with OAuth version
+export interface CalendarServiceLike {
+  calendarInstance?: any;
+}
 
 export interface AptosTransactionRequest {
   type: "send" | "swap" | "delegate";
@@ -23,12 +26,12 @@ export class AptosWalletService {
   private client: AptosClient;
   private faucetClient: FaucetClient;
   private coinClient: CoinClient;
-  public calendarService: CalendarService;
+  public calendarService: CalendarServiceLike;
   
-  // Move module address (will be set after deployment)
-  private readonly MODULE_ADDRESS = "0x1";
+  // Replace with your deployed contract address from step 2
+  private readonly MODULE_ADDRESS = "0x5cde772759e6872bf4de85ed6bf51cd19250e7406d92378e5322971d8cef22a8";
   
-  constructor(calendarService: CalendarService) {
+  constructor(calendarService: CalendarServiceLike) {
     const nodeUrl = process.env.APTOS_NODE_URL || "https://fullnode.testnet.aptoslabs.com/v1";
     const faucetUrl = process.env.APTOS_FAUCET_URL || "https://faucet.testnet.aptoslabs.com";
     
@@ -113,7 +116,7 @@ export class AptosWalletService {
    * Create calendar transaction (simplified for demo)
    */
   public async createCalendarTransaction(
-    calendarId: string,
+    calendarId: string, 
     transactionId: string,
     request: AptosTransactionRequest
   ): Promise<string> {
@@ -122,8 +125,31 @@ export class AptosWalletService {
     const account = this.generateCalendarWallet(calendarId);
     await this.ensureFunding(account);
     
-    // For demo, return mock transaction hash
-    return "0x" + Array(64).fill(0).map(() => Math.floor(Math.random() * 16).toString(16)).join('');
+    // Use the actual contract function
+    const payload = {
+      type: "entry_function_payload",
+      function: `${this.MODULE_ADDRESS}::calendar_defi::create_transaction`,
+      type_arguments: [],
+      arguments: [
+        transactionId,
+        request.recipient,
+        request.amount,
+        request.token
+      ]
+    };
+    
+    // Execute the transaction
+    try {
+      const txnRequest = await this.client.generateTransaction(account.address(), payload);
+      const signedTxn = await this.client.signTransaction(account, txnRequest);
+      const transactionRes = await this.client.submitTransaction(signedTxn);
+      await this.client.waitForTransaction(transactionRes.hash);
+      
+      return transactionRes.hash;
+    } catch (error) {
+      console.error("Error creating calendar transaction:", error);
+      throw error;
+    }
   }
 
   /**

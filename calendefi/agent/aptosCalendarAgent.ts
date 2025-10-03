@@ -1,4 +1,15 @@
-import "dotenv/config";
+// Import dotenv manually first
+import * as dotenv from 'dotenv';
+const result = dotenv.config();
+
+// Debug environment loading
+console.log("🔧 Environment Debug:");
+console.log("dotenv result:", result);
+console.log("GOOGLE_CLIENT_ID:", process.env.GOOGLE_CLIENT_ID || "NOT SET");
+console.log("GOOGLE_CLIENT_SECRET:", process.env.GOOGLE_CLIENT_SECRET ? "SET (hidden)" : "NOT SET");
+console.log("Current working directory:", process.cwd());
+
+// Rest of your imports
 import express from "express";
 import cors from "cors";
 import { CalendarServiceOAuth } from "./helpers/calendarServiceOAuth";
