@@ -157,4 +157,44 @@ export class CalendarServiceOAuth {
 
     return null;
   }
+
+  /**
+   * Create a calendar event
+   */
+  async createEvent(
+    title: string,
+    startTime: Date,
+    description?: string,
+    duration: number = 60 // minutes
+  ): Promise<{ eventId: string, eventUrl: string }> {
+    try {
+      const endTime = new Date(startTime.getTime() + duration * 60 * 1000);
+      
+      const event = {
+        summary: title,
+        description: description,
+        start: {
+          dateTime: startTime.toISOString(),
+          timeZone: 'UTC',
+        },
+        end: {
+          dateTime: endTime.toISOString(),
+          timeZone: 'UTC',
+        },
+      };
+
+      const response = await this.calendarInstance.events.insert({
+        calendarId: 'primary',
+        requestBody: event,
+      });
+
+      return {
+        eventId: response.data.id || '',
+        eventUrl: response.data.htmlLink || ''
+      };
+    } catch (error) {
+      console.error('Error creating calendar event:', error);
+      throw error;
+    }
+  }
 }

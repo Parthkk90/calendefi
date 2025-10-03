@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Aptos Transaction Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .form-group { margin: 10px 0; }
+        label { display: block; margin-bottom: 5px; }
+        input, button { padding: 8px; width: 200px; }
+        button { background: #007bff; color: white; border: none; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .result { margin-top: 20px; padding: 10px; border: 1px solid #ddd; }
+        .success { background: #d4edda; border-color: #c3e6cb; }
+        .error { background: #f8d7da; border-color: #f5c6cb; }
+    </style>
+</head>
+<body>
+    <h1>🚀 CalendeFi Aptos Transaction Test</h1>
+    
+    <h2>💳 Wallet Info</h2>
+    <button onclick="getWalletInfo()">Get Wallet Info</button>
+    <div id="walletResult" class="result" style="display:none;"></div>
+    
+    <h2>💸 Execute Real Transaction</h2>
+    <form onsubmit="executeTransaction(event)">
+        <div class="form-group">
+            <label>Amount:</label>
+            <input type="text" id="amount" value="0.001" required>
+        </div>
+        <div class="form-group">
+            <label>Token:</label>
+            <input type="text" id="token" value="APT" required>
+        </div>
+        <div class="form-group">
+            <label>Recipient:</label>
+            <input type="text" id="recipient" value="0x1" required>
+        </div>
+        <div class="form-group">
+            <label>
+                <input type="checkbox" id="executeNow" checked> Execute Now (Real Transaction)
+            </label>
+        </div>
+        <button type="submit">🚀 Execute Transaction</button>
+    </form>
+    <div id="transactionResult" class="result" style="display:none;"></div>
+
+    <script>
+        async function getWalletInfo() {
+            const resultDiv = document.getElementById('walletResult');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '⏳ Loading wallet info...';
+            
+            try {
+                const response = await fetch('/aptos/wallet');
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <h3>✅ Wallet Info</h3>
+                        <p><strong>Address:</strong> ${data.wallet.address}</p>
+                        <p><strong>Balance:</strong> ${data.wallet.balance} APT</p>
+                        <p><strong>Network:</strong> ${data.wallet.network}</p>
+                        <p><a href="${data.wallet.explorerUrl}" target="_blank">View on Explorer</a></p>
+                    `;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `<h3>❌ Error</h3><p>${data.error}</p>`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<h3>❌ Error</h3><p>${error.message}</p>`;
+            }
+        }
+        
+        async function executeTransaction(event) {
+            event.preventDefault();
+            
+            const resultDiv = document.getElementById('transactionResult');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '⏳ Executing transaction...';
+            
+            const amount = document.getElementById('amount').value;
+            const token = document.getElementById('token').value;
+            const recipient = document.getElementById('recipient').value;
+            const executeNow = document.getElementById('executeNow').checked;
+            
+            try {
+                const response = await fetch('/aptos/demo-transaction', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        amount,
+                        token,
+                        recipient,
+                        executeNow
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.className = 'result success';
+                    if (data.txHash) {
+                        resultDiv.innerHTML = `
+                            <h3>🎉 Real Transaction Executed!</h3>
+                            <p><strong>Transaction Hash:</strong> ${data.txHash}</p>
+                            <p><strong>Amount:</strong> ${data.amount} ${data.token}</p>
+                            <p><strong>Recipient:</strong> ${data.recipient}</p>
+                            <p><a href="${data.explorerUrl}" target="_blank">View on Aptos Explorer</a></p>
+                        `;
+                    } else {
+                        resultDiv.innerHTML = `
+                            <h3>✅ Calendar Event Created</h3>
+                            <p><strong>Event ID:</strong> ${data.eventId}</p>
+                            <p><strong>Execute Time:</strong> ${data.executeTime}</p>
+                        `;
+                    }
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `<h3>❌ Error</h3><p>${data.error}</p>`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<h3>❌ Error</h3><p>${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,5 +1,5 @@
 import { AptosAccount, AptosClient, CoinClient, FaucetClient, HexString } from "aptos";
-// Note: CalendarService import updated to be compatible with OAuth version
+
 export interface CalendarServiceLike {
   calendarInstance?: any;
 }
@@ -28,8 +28,7 @@ export class AptosWalletService {
   private coinClient: CoinClient;
   public calendarService: CalendarServiceLike;
   
-  // Replace with your deployed contract address from step 2
-  private readonly MODULE_ADDRESS = "0x5cde772759e6872bf4de85ed6bf51cd19250e7406d92378e5322971d8cef22a8";
+  private readonly MODULE_ADDRESS = "0x8dd4f89ac22a7e17a8556adb4df57e1691199afcb419de4c039507b68736cdb4";
   
   constructor(calendarService: CalendarServiceLike) {
     const nodeUrl = process.env.APTOS_NODE_URL || "https://fullnode.testnet.aptoslabs.com/v1";
@@ -41,31 +40,21 @@ export class AptosWalletService {
     this.calendarService = calendarService;
   }
 
-  /**
-   * Generate deterministic Aptos account from calendar ID
-   */
   public generateCalendarWallet(calendarId: string): AptosAccount {
-    // Create deterministic seed from calendar ID
     const seed = new TextEncoder().encode(calendarId + "calendefi_aptos");
     const crypto = require('crypto');
     const hash = crypto.createHash('sha256').update(seed).digest();
     
-    // Create Aptos account from seed
     return new AptosAccount(new Uint8Array(hash).slice(0, 32));
   }
 
-  /**
-   * Get wallet information
-   */
   public async getWalletInfo(calendarId: string): Promise<AptosWalletInfo> {
     const account = this.generateCalendarWallet(calendarId);
     const address = account.address().hex();
     
     try {
-      // Get APT balance
       const balance = await this.coinClient.checkBalance(account);
       
-      // Get account resources
       let resources: any[] = [];
       try {
         resources = (await this.client.getAccountResources(address)) as any[];
@@ -75,7 +64,7 @@ export class AptosWalletService {
       
       return {
         address,
-        balance: (Number(balance) / 100000000).toFixed(8), // Convert from Octas to APT
+        balance: (Number(balance) / 100000000).toFixed(8),
         network: "Aptos Testnet",
         explorerUrl: `https://explorer.aptoslabs.com/account/${address}?network=testnet`,
         resources
@@ -93,123 +82,187 @@ export class AptosWalletService {
   }
 
   /**
-   * Initialize calendar collection on Aptos (simplified for demo)
-   */
-  public async initializeCalendar(
-    calendarId: string,
-    collectionName: string,
-    description: string,
-    multisigThreshold: number = 1,
-    authorizedSigners: string[] = []
-  ): Promise<string> {
-    console.log(`Initializing calendar collection for ${calendarId}`);
-    
-    // For demo purposes, we'll just ensure the account is funded
-    const account = this.generateCalendarWallet(calendarId);
-    await this.ensureFunding(account);
-    
-    // Return a mock transaction hash for demo
-    return "0x" + Array(64).fill(0).map(() => Math.floor(Math.random() * 16).toString(16)).join('');
-  }
-
-  /**
-   * Create calendar transaction (simplified for demo)
+   * REAL BLOCKCHAIN TRANSACTION: Create and execute APT transfer
    */
   public async createCalendarTransaction(
     calendarId: string, 
     transactionId: string,
     request: AptosTransactionRequest
   ): Promise<string> {
-    console.log(`Creating transaction: ${request.type} ${request.amount} ${request.token} to ${request.recipient}`);
+    console.log(`🚀 EXECUTING REAL TRANSACTION: ${request.type} ${request.amount} ${request.token} to ${request.recipient}`);
     
     const account = this.generateCalendarWallet(calendarId);
     await this.ensureFunding(account);
     
-    // Use the actual contract function
-    const payload = {
-      type: "entry_function_payload",
-      function: `${this.MODULE_ADDRESS}::calendar_defi::create_transaction`,
-      type_arguments: [],
-      arguments: [
-        transactionId,
-        request.recipient,
-        request.amount,
-        request.token
-      ]
-    };
-    
-    // Execute the transaction
-    try {
-      const txnRequest = await this.client.generateTransaction(account.address(), payload);
-      const signedTxn = await this.client.signTransaction(account, txnRequest);
-      const transactionRes = await this.client.submitTransaction(signedTxn);
-      await this.client.waitForTransaction(transactionRes.hash);
-      
-      return transactionRes.hash;
-    } catch (error) {
-      console.error("Error creating calendar transaction:", error);
-      throw error;
+    // Execute real APT transfer
+    if (request.token.toUpperCase() === "APT") {
+      return await this.executeRealAPTTransfer(account, request);
     }
+    
+    // For other tokens, return error for now
+    throw new Error(`Token ${request.token} not supported yet. Only APT transfers are implemented.`);
   }
 
   /**
-   * Execute transaction (simplified for demo)
+   * REAL APT TRANSFER FUNCTION
    */
-  public async executeTransaction(
-    calendarId: string,
-    transactionId: string
+  private async executeRealAPTTransfer(
+    account: AptosAccount,
+    request: AptosTransactionRequest
   ): Promise<string> {
-    console.log(`Executing transaction: ${transactionId}`);
-    
-    const account = this.generateCalendarWallet(calendarId);
-    
-    // For APT transfers, we can do a simple transfer
     try {
-      // Demo: send 0.001 APT to a test address
-      const recipient = "0x1"; // Test recipient
-      const amount = 1000; // 0.001 APT in Octas
+      // Convert amount to Octas (1 APT = 100,000,000 Octas)
+      const amountInOctas = Math.floor(parseFloat(request.amount) * 100000000);
       
+      console.log(`💰 Transferring ${amountInOctas} Octas (${request.amount} APT) to ${request.recipient}`);
+      
+      // Create the transaction payload
       const payload = {
         type: "entry_function_payload",
         function: "0x1::coin::transfer",
         type_arguments: ["0x1::aptos_coin::AptosCoin"],
-        arguments: [recipient, amount.toString()]
+        arguments: [request.recipient, amountInOctas.toString()]
       };
 
+      console.log("📋 Transaction payload:", JSON.stringify(payload, null, 2));
+
+      // Generate transaction
       const txnRequest = await this.client.generateTransaction(account.address(), payload);
+      console.log("⚡ Generated transaction request");
+
+      // Sign transaction
       const signedTxn = await this.client.signTransaction(account, txnRequest);
+      console.log("✍️ Signed transaction");
+
+      // Submit to blockchain
       const transactionRes = await this.client.submitTransaction(signedTxn);
+      console.log("📤 Submitted transaction:", transactionRes.hash);
+
+      // Wait for confirmation
+      console.log("⏳ Waiting for transaction confirmation...");
       await this.client.waitForTransaction(transactionRes.hash);
+      
+      console.log("✅ TRANSACTION CONFIRMED!");
+      console.log(`🔗 Explorer: https://explorer.aptoslabs.com/txn/${transactionRes.hash}?network=testnet`);
       
       return transactionRes.hash;
     } catch (error) {
-      console.error("Error executing transaction:", error);
-      // Return mock hash for demo if real transaction fails
-      return "0x" + Array(64).fill(0).map(() => Math.floor(Math.random() * 16).toString(16)).join('');
+      console.error("❌ Real APT transfer failed:", error);
+      throw new Error(`APT transfer failed: ${(error as any).message}`);
     }
   }
 
   /**
-   * Ensure account has sufficient APT for gas fees
+   * REAL TRANSACTION EXECUTION for calendar events
    */
+  public async executeTransaction(
+    calendarId: string,
+    transactionId: string,
+    amount: string = "0.001",
+    recipient: string = "0x1"
+  ): Promise<string> {
+    console.log(`🎯 EXECUTING REAL CALENDAR TRANSACTION: ${transactionId}`);
+    
+    const account = this.generateCalendarWallet(calendarId);
+    await this.ensureFunding(account);
+    
+    // Create real transaction request
+    const request: AptosTransactionRequest = {
+      type: "send",
+      amount: amount,
+      token: "APT",
+      recipient: recipient,
+      executeAt: new Date(),
+      requiresApproval: false
+    };
+    
+    return await this.executeRealAPTTransfer(account, request);
+  }
+
+  /**
+   * Batch execute multiple transactions
+   */
+  public async executeBatchTransactions(
+    calendarId: string,
+    transactions: Array<{id: string, amount: string, recipient: string}>
+  ): Promise<string[]> {
+    console.log(`🔄 Executing ${transactions.length} real transactions...`);
+    
+    const results = [];
+    for (const tx of transactions) {
+      try {
+        const hash = await this.executeTransaction(calendarId, tx.id, tx.amount, tx.recipient);
+        results.push(hash);
+        console.log(`✅ Transaction ${tx.id} completed: ${hash}`);
+        
+        // Wait 2 seconds between transactions
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      } catch (error) {
+        console.error(`❌ Transaction ${tx.id} failed:`, error);
+        results.push(`failed: ${(error as any).message}`);
+      }
+    }
+    
+    return results;
+  }
+
+  /**
+   * Get real transaction status from blockchain
+   */
+  public async getTransactionStatus(txHash: string): Promise<any> {
+    try {
+      const txData = await this.client.getTransactionByHash(txHash);
+      console.log("📊 Transaction status:", txData);
+      return txData;
+    } catch (error) {
+      console.error("Error getting transaction status:", error);
+      return null;
+    }
+  }
+
   private async ensureFunding(account: AptosAccount): Promise<void> {
     try {
       const balance = await this.coinClient.checkBalance(account);
       
-      // If balance is less than 0.1 APT, fund from faucet
       if (Number(balance) < 10000000) { // 0.1 APT in Octas
-        console.log("Funding account from faucet...");
+        console.log("💧 Funding account from faucet...");
         await this.faucetClient.fundAccount(account.address(), 100000000); // 1 APT
-        await new Promise(resolve => setTimeout(resolve, 3000)); // Wait for funding
+        await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
+        console.log("✅ Account funded!");
+      } else {
+        console.log("💰 Account has sufficient balance:", (Number(balance) / 100000000).toFixed(8), "APT");
       }
     } catch (error) {
-      console.log("Account not found, funding from faucet...");
+      console.log("🆕 Account not found, funding from faucet...");
       try {
         await this.faucetClient.fundAccount(account.address(), 100000000);
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        console.log("✅ New account funded!");
       } catch (faucetError) {
-        console.error("Faucet funding failed:", faucetError);
+        console.error("❌ Faucet funding failed:", faucetError);
       }
+    }
+  }
+
+  /**
+   * Get balance for any Aptos address
+   */
+  public async getAddressBalance(address: string): Promise<string> {
+    try {
+      const resources = await this.client.getAccountResources(address);
+      const aptCoinResource = resources.find(
+        (resource) => resource.type === "0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>"
+      );
+      
+      if (!aptCoinResource) {
+        return "0";
+      }
+      
+      const balance = (aptCoinResource.data as any).coin.value;
+      return balance;
+    } catch (error) {
+      console.error("Error getting address balance:", error);
+      return "0";
     }
   }
 }

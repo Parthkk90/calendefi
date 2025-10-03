@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>📅 CalendeFi - Schedule Blockchain Transactions</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            padding: 20px; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255,255,255,0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        .form-group { 
+            margin: 15px 0; 
+        }
+        label { 
+            display: block; 
+            margin-bottom: 8px; 
+            font-weight: bold;
+        }
+        input, select, textarea, button { 
+            padding: 12px; 
+            width: 100%; 
+            box-sizing: border-box;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        input, select, textarea {
+            background: rgba(255,255,255,0.9);
+            color: #333;
+        }
+        button { 
+            background: #28a745; 
+            color: white; 
+            cursor: pointer;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        button:hover { 
+            background: #218838; 
+        }
+        .result { 
+            margin-top: 20px; 
+            padding: 15px; 
+            border-radius: 8px;
+            background: rgba(255,255,255,0.1);
+        }
+        .success { 
+            background: rgba(40, 167, 69, 0.3); 
+            border: 1px solid #28a745;
+        }
+        .error { 
+            background: rgba(220, 53, 69, 0.3); 
+            border: 1px solid #dc3545;
+        }
+        .info {
+            background: rgba(23, 162, 184, 0.3);
+            border: 1px solid #17a2b8;
+        }
+        h1, h2 { text-align: center; margin-bottom: 30px; }
+        .example {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .online { background: #28a745; }
+        .offline { background: #dc3545; }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 768px) {
+            .grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📅 CalendeFi - Schedule Blockchain Transactions</h1>
+        
+        <!-- Navigation -->
+        <div style="text-align: center; margin-bottom: 20px;">
+            <a href="schedule.html" style="color: white; text-decoration: none; padding: 10px 15px; background: rgba(255,255,255,0.2); border-radius: 5px; margin: 0 5px;">📅 Schedule</a>
+            <a href="wallet.html" style="color: white; text-decoration: none; padding: 10px 15px; background: rgba(255,255,255,0.2); border-radius: 5px; margin: 0 5px;">💳 Wallets</a>
+            <a href="monitor.html" style="color: white; text-decoration: none; padding: 10px 15px; background: rgba(255,255,255,0.2); border-radius: 5px; margin: 0 5px;">📊 Monitor</a>
+        </div>
+        
+        <!-- System Status -->
+        <div class="info result">
+            <h3>🔧 System Status</h3>
+            <p><span id="agentStatus" class="status-indicator offline"></span> Agent Status: <span id="agentStatusText">Checking...</span></p>
+            <p><span id="calendarStatus" class="status-indicator offline"></span> Calendar: <span id="calendarStatusText">Checking...</span></p>
+            <button onclick="checkSystemStatus()">🔄 Refresh Status</button>
+        </div>
+
+        <div class="grid">
+            <!-- Calendar Event Creation -->
+            <div>
+                <h2>📝 Create Calendar Transaction Event</h2>
+                
+                <div class="example">
+                    <strong>📖 Event Title Examples:</strong><br>
+                    • "Send 0.1 APT to 0x123..."<br>
+                    • "Transfer 0.05 APT to alice.apt"<br>
+                    • "Pay 0.001 APT to 0x1"<br>
+                </div>
+
+                <form onsubmit="createCalendarEvent(event)">
+                    <div class="form-group">
+                        <label>📅 Event Title (Transaction Description):</label>
+                        <input type="text" id="eventTitle" 
+                               placeholder="Send 0.1 APT to 0x1234..." 
+                               required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>📝 Description (Optional):</label>
+                        <textarea id="eventDescription" 
+                                  placeholder="Monthly payment to supplier..."
+                                  rows="3"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>⏰ Execution Date & Time:</label>
+                        <input type="datetime-local" id="eventDateTime" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>⏱️ Duration (minutes):</label>
+                        <select id="eventDuration">
+                            <option value="30">30 minutes</option>
+                            <option value="60" selected>1 hour</option>
+                            <option value="120">2 hours</option>
+                            <option value="1440">All day</option>
+                        </select>
+                    </div>
+                    
+                    <button type="submit">📅 Create Calendar Event</button>
+                </form>
+            </div>
+
+            <!-- Quick Transaction Templates -->
+            <div>
+                <h2>⚡ Quick Templates</h2>
+                
+                <div class="form-group">
+                    <label>💰 Amount:</label>
+                    <input type="number" id="quickAmount" value="0.001" step="0.001" min="0">
+                </div>
+                
+                <div class="form-group">
+                    <label>🎯 Recipient:</label>
+                    <div style="display: flex; gap: 10px;">
+                        <select id="recipientSelect" onchange="updateRecipientInput()" style="flex: 1;">
+                            <option value="">Choose from address book...</option>
+                            <option value="0x1">0x1 (Test Address)</option>
+                        </select>
+                        <button type="button" onclick="openWalletManager()" style="width: 150px; background: #6c757d;">💳 Manage</button>
+                    </div>
+                    <input type="text" id="quickRecipient" 
+                           placeholder="0x1 or enter custom address"
+                           value="0x1"
+                           style="margin-top: 10px;">
+                </div>
+                
+                <div class="form-group">
+                    <label>⏰ Schedule for:</label>
+                    <select id="quickSchedule" onchange="updateQuickDateTime()">
+                        <option value="5">5 minutes from now</option>
+                        <option value="30">30 minutes from now</option>
+                        <option value="60">1 hour from now</option>
+                        <option value="1440">Tomorrow</option>
+                        <option value="custom">Custom time</option>
+                    </select>
+                </div>
+                
+                <button onclick="createQuickEvent()">⚡ Quick Schedule</button>
+                
+                <hr style="margin: 20px 0; border: 1px solid rgba(255,255,255,0.2);">
+                
+                <h3>🎯 Immediate Actions</h3>
+                <button onclick="executeNow()">🚀 Execute Transaction Now</button>
+                <button onclick="testCalendarMonitoring()">🔍 Test Calendar Monitoring</button>
+            </div>
+        </div>
+
+        <!-- Results -->
+        <div id="result" class="result" style="display:none;"></div>
+        
+        <!-- Recent Events -->
+        <div>
+            <h2>📊 Recent Calendar Events</h2>
+            <button onclick="loadRecentEvents()">🔄 Load Recent Events</button>
+            <div id="recentEvents" class="result info" style="display:none;"></div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize datetime input with current time + 1 hour
+        window.onload = function() {
+            const now = new Date();
+            now.setHours(now.getHours() + 1);
+            document.getElementById('eventDateTime').value = now.toISOString().slice(0, 16);
+            checkSystemStatus();
+        };
+
+        async function checkSystemStatus() {
+            const agentStatus = document.getElementById('agentStatus');
+            const agentStatusText = document.getElementById('agentStatusText');
+            const calendarStatus = document.getElementById('calendarStatus');
+            const calendarStatusText = document.getElementById('calendarStatusText');
+            
+            // Check agent status
+            try {
+                const response = await fetch('/health');
+                if (response.ok) {
+                    agentStatus.className = 'status-indicator online';
+                    agentStatusText.textContent = 'Online';
+                } else {
+                    agentStatus.className = 'status-indicator offline';
+                    agentStatusText.textContent = 'Offline';
+                }
+            } catch (error) {
+                agentStatus.className = 'status-indicator offline';
+                agentStatusText.textContent = 'Offline';
+            }
+            
+            // Check calendar status
+            try {
+                const response = await fetch('/aptos/events');
+                if (response.ok) {
+                    calendarStatus.className = 'status-indicator online';
+                    calendarStatusText.textContent = 'Connected';
+                } else {
+                    calendarStatus.className = 'status-indicator offline';
+                    calendarStatusText.textContent = 'Disconnected';
+                }
+            } catch (error) {
+                calendarStatus.className = 'status-indicator offline';
+                calendarStatusText.textContent = 'Disconnected';
+            }
+        }
+
+        function updateQuickDateTime() {
+            const schedule = document.getElementById('quickSchedule').value;
+            if (schedule !== 'custom') {
+                const now = new Date();
+                now.setMinutes(now.getMinutes() + parseInt(schedule));
+                document.getElementById('eventDateTime').value = now.toISOString().slice(0, 16);
+            }
+        }
+
+        async function createCalendarEvent(event) {
+            event.preventDefault();
+            showResult('⏳ Creating calendar event...', 'info');
+            
+            const title = document.getElementById('eventTitle').value;
+            const description = document.getElementById('eventDescription').value;
+            const dateTime = document.getElementById('eventDateTime').value;
+            const duration = parseInt(document.getElementById('eventDuration').value);
+            
+            const startTime = new Date(dateTime);
+            const endTime = new Date(startTime.getTime() + duration * 60000);
+            
+            try {
+                const response = await fetch('/aptos/create-event', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        summary: title,
+                        description: description,
+                        start: { dateTime: startTime.toISOString() },
+                        end: { dateTime: endTime.toISOString() }
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showResult(`
+                        <h3>✅ Calendar Event Created Successfully!</h3>
+                        <p><strong>Event ID:</strong> ${data.eventId}</p>
+                        <p><strong>Title:</strong> ${title}</p>
+                        <p><strong>Scheduled:</strong> ${startTime.toLocaleString()}</p>
+                        <p><strong>Parsed Transaction:</strong> ${data.parsedTransaction ? JSON.stringify(data.parsedTransaction, null, 2) : 'None detected'}</p>
+                        <p>The transaction will be automatically executed at the scheduled time!</p>
+                    `, 'success');
+                } else {
+                    showResult(`<h3>❌ Error</h3><p>${data.error}</p>`, 'error');
+                }
+            } catch (error) {
+                showResult(`<h3>❌ Error</h3><p>${error.message}</p>`, 'error');
+            }
+        }
+
+        function createQuickEvent() {
+            const amount = document.getElementById('quickAmount').value;
+            const recipient = document.getElementById('quickRecipient').value;
+            
+            document.getElementById('eventTitle').value = `Send ${amount} APT to ${recipient}`;
+            document.getElementById('eventDescription').value = 'Quick scheduled transaction via CalendeFi';
+            
+            // Trigger the form submission
+            document.querySelector('form').dispatchEvent(new Event('submit'));
+        }
+
+        async function executeNow() {
+            showResult('⏳ Executing immediate transaction...', 'info');
+            
+            const amount = document.getElementById('quickAmount').value;
+            const recipient = document.getElementById('quickRecipient').value;
+            
+            try {
+                const response = await fetch('/aptos/demo-transaction', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        amount: amount,
+                        token: 'APT',
+                        recipient: recipient,
+                        executeNow: true
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success && data.txHash) {
+                    showResult(`
+                        <h3>🎉 Transaction Executed Successfully!</h3>
+                        <p><strong>Transaction Hash:</strong> ${data.txHash}</p>
+                        <p><strong>Amount:</strong> ${data.amount} ${data.token}</p>
+                        <p><strong>Recipient:</strong> ${data.recipient}</p>
+                        <p><a href="${data.explorerUrl}" target="_blank">View on Aptos Explorer</a></p>
+                    `, 'success');
+                } else {
+                    showResult(`<h3>❌ Error</h3><p>${data.error || 'Transaction failed'}</p>`, 'error');
+                }
+            } catch (error) {
+                showResult(`<h3>❌ Error</h3><p>${error.message}</p>`, 'error');
+            }
+        }
+
+        async function testCalendarMonitoring() {
+            showResult('⏳ Testing calendar monitoring...', 'info');
+            
+            try {
+                const response = await fetch('/aptos/events');
+                const data = await response.json();
+                
+                if (data.success) {
+                    showResult(`
+                        <h3>✅ Calendar Monitoring Active</h3>
+                        <p><strong>Events Found:</strong> ${data.events.length}</p>
+                        <p><strong>Monitoring Status:</strong> Active</p>
+                        <p>Recent events are being monitored for transaction patterns.</p>
+                    `, 'success');
+                } else {
+                    showResult(`<h3>❌ Error</h3><p>${data.error}</p>`, 'error');
+                }
+            } catch (error) {
+                showResult(`<h3>❌ Error</h3><p>${error.message}</p>`, 'error');
+            }
+        }
+
+        async function loadRecentEvents() {
+            showResult('⏳ Loading recent events...', 'info');
+            
+            try {
+                const response = await fetch('/aptos/events');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const eventsDiv = document.getElementById('recentEvents');
+                    eventsDiv.style.display = 'block';
+                    eventsDiv.innerHTML = `
+                        <h3>📅 Recent Calendar Events (${data.events.length})</h3>
+                        ${data.events.map(event => `
+                            <div style="margin: 10px 0; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 5px;">
+                                <strong>${event.summary}</strong><br>
+                                <small>Scheduled: ${new Date(event.start).toLocaleString()}</small><br>
+                                ${event.parsedTransaction ? `<span style="color: #28a745;">💰 Transaction: ${event.parsedTransaction.amount} ${event.parsedTransaction.token} to ${event.parsedTransaction.recipient}</span>` : '<span style="color: #ffc107;">⚠️ No transaction pattern detected</span>'}
+                            </div>
+                        `).join('')}
+                    `;
+                } else {
+                    showResult(`<h3>❌ Error</h3><p>${data.error}</p>`, 'error');
+                }
+            } catch (error) {
+                showResult(`<h3>❌ Error</h3><p>${error.message}</p>`, 'error');
+            }
+        }
+
+        function showResult(html, type) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.className = `result ${type}`;
+            resultDiv.innerHTML = html;
+            resultDiv.style.display = 'block';
+            resultDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Recipient management functions
+        function updateRecipientInput() {
+            const select = document.getElementById('recipientSelect');
+            const input = document.getElementById('quickRecipient');
+            if (select.value) {
+                input.value = select.value;
+            }
+        }
+
+        function openWalletManager() {
+            window.open('wallet.html', '_blank');
+        }
+
+        function loadRecipients() {
+            const recipients = JSON.parse(localStorage.getItem('calendefi_recipients') || '[]');
+            const select = document.getElementById('recipientSelect');
+            
+            // Clear existing options except the first two
+            while (select.options.length > 2) {
+                select.remove(2);
+            }
+            
+            // Add saved recipients
+            recipients.forEach(recipient => {
+                const option = document.createElement('option');
+                option.value = recipient.address;
+                option.textContent = `${recipient.name} (${recipient.address.slice(0, 8)}...${recipient.address.slice(-6)})`;
+                select.appendChild(option);
+            });
+        }
+
+        // Load recipients on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadRecipients();
+            
+            // Refresh recipients if window comes back into focus (after using wallet manager)
+            window.addEventListener('focus', loadRecipients);
+        });
+    </script>
+</body>
+</html>

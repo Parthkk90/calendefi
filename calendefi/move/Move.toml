@@ -4,10 +4,11 @@ version = "1.0.0"
 authors = ["CalendeFi Team"]
 
 [addresses]
-calendefi = "_"
+calendefi = "0x8dd4f89ac22a7e17a8556adb4df57e1691199afcb419de4c039507b68736cdb4"
 
 [dev-addresses]
 calendefi = "0x1"
 
 [dependencies]
-AptosFramework = { git = "https://github.com/aptos-labs/aptos-core.git", rev = "devnet", subdir = "aptos-move/framework/aptos-framework" }
+AptosFramework = { git = "https://github.com/aptos-labs/aptos-core.git", rev = "testnet", subdir = "aptos-move/framework/aptos-framework" }
+AptosStdlib = { git = "https://github.com/aptos-labs/aptos-core.git", rev = "testnet", subdir = "aptos-move/framework/aptos-stdlib" }

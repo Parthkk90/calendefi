@@ -2,7 +2,8 @@
 import * as dotenv from 'dotenv';
 const result = dotenv.config();
 
-// Debug environment loading
+// Debug environ    // Calendar wallet is initialized on first transaction
+    console.log("✅ Calendar wallet ready for transactions");
 console.log("🔧 Environment Debug:");
 console.log("dotenv result:", result);
 console.log("GOOGLE_CLIENT_ID:", process.env.GOOGLE_CLIENT_ID || "NOT SET");
@@ -21,6 +22,7 @@ const PORT = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(express.json());
+app.use(express.static('public')); // Serve static files from public directory
 
 // Initialize services
 const calendarService = new CalendarServiceOAuth();
@@ -116,19 +118,8 @@ async function monitorCalendar() {
       return;
     }
 
-    // Initialize calendar collection if not exists
-    try {
-      await aptosWalletService.initializeCalendar(
-        CALENDAR_ID,
-        "CalendeFi Calendar",
-        "Calendar-based DeFi transactions on Aptos",
-        1,
-        []
-      );
-      console.log("✅ Calendar collection initialized");
-    } catch (error) {
-      console.log("📅 Calendar already initialized");
-    }
+    // Calendar wallet is initialized on first transaction
+    console.log("✅ Calendar system ready for transactions");
 
     setInterval(async () => {
       try {
@@ -289,6 +280,16 @@ app.get("/aptos/wallet", async (req, res) => {
   }
 });
 
+app.get("/aptos/balance/:address", async (req, res) => {
+  try {
+    const { address } = req.params;
+    const balance = await aptosWalletService.getAddressBalance(address);
+    res.json({ success: true, balance: balance });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 app.get("/aptos/events", async (req, res) => {
   try {
     if (!calendarService.isAuthenticated()) {
@@ -324,9 +325,40 @@ app.post("/aptos/demo-transaction", async (req, res) => {
       });
     }
 
-    const { amount = "0.1", token = "APT", recipient = "0x1" } = req.body;
+    const { amount = "0.001", token = "APT", recipient = "0x1", executeNow = true } = req.body;
     
-    // Create calendar event
+    console.log(`🚀 Demo transaction request: ${amount} ${token} to ${recipient}`);
+    
+    // Execute real transaction immediately if requested
+    if (executeNow) {
+      try {
+        const txHash = await aptosWalletService.executeTransaction(
+          CALENDAR_ID, 
+          `demo-${Date.now()}`, 
+          amount, 
+          recipient
+        );
+        
+        return res.json({
+          success: true,
+          message: "REAL Aptos transaction executed!",
+          txHash: txHash,
+          explorerUrl: `https://explorer.aptoslabs.com/txn/${txHash}?network=testnet`,
+          amount: amount,
+          token: token,
+          recipient: recipient
+        });
+      } catch (txError: any) {
+        console.error("Transaction execution failed:", txError);
+        return res.status(500).json({
+          success: false,
+          error: `Transaction failed: ${txError.message}`,
+          details: txError.toString()
+        });
+      }
+    }
+    
+    // Create calendar event for future execution
     const now = new Date();
     const executeTime = new Date(now.getTime() + 2 * 60 * 1000); // 2 minutes from now
     
@@ -350,6 +382,75 @@ app.post("/aptos/demo-transaction", async (req, res) => {
     });
   } catch (error: any) {
     res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Create calendar event endpoint
+app.post("/aptos/create-event", async (req, res) => {
+  try {
+    if (!calendarService.isAuthenticated()) {
+      return res.status(401).json({ 
+        success: false, 
+        error: "Not authenticated with Google Calendar",
+        authUrl: calendarService.getAuthUrl()
+      });
+    }
+
+    const { summary, description, start, end } = req.body;
+    
+    if (!summary || !start || !end) {
+      return res.status(400).json({
+        success: false,
+        error: "Missing required fields: summary, start, end"
+      });
+    }
+
+    console.log(`📅 Creating calendar event: "${summary}" at ${start.dateTime}`);
+    
+    // Create the calendar event
+    const event = {
+      summary: summary,
+      description: description || `Created via CalendeFi`,
+      start: start,
+      end: end,
+    };
+
+    const response = await calendarService.calendarInstance.events.insert({
+      calendarId: CALENDAR_ID,
+      requestBody: event,
+    });
+
+    // Parse the event to see if it contains a transaction
+    const mockEvent = {
+      id: response.data.id,
+      summary: summary,
+      description: description,
+      start: start,
+      end: end
+    };
+    
+    const parsedTransaction = parseTransactionIntent(mockEvent);
+    
+    console.log(`✅ Calendar event created: ${response.data.id}`);
+    if (parsedTransaction) {
+      console.log(`💰 Transaction detected: ${parsedTransaction.amount} ${parsedTransaction.token} to ${parsedTransaction.recipient}`);
+    }
+
+    res.json({
+      success: true,
+      message: "Calendar event created successfully!",
+      eventId: response.data.id,
+      summary: summary,
+      scheduledTime: start.dateTime,
+      parsedTransaction: parsedTransaction,
+      htmlLink: response.data.htmlLink
+    });
+  } catch (error: any) {
+    console.error("Error creating calendar event:", error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
   }
 });
 
@@ -382,6 +483,75 @@ app.post("/aptos/process-events", async (req, res) => {
     });
 
   } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Add this new endpoint for real transactions
+app.post('/aptos/real-transaction', async (req, res) => {
+  try {
+    const { amount = "0.001", recipient = "0x1", token = "APT" } = req.body;
+    
+    console.log("🎯 Creating REAL blockchain transaction...");
+    
+    const request: AptosTransactionRequest = {
+      type: "send",
+      amount,
+      token,
+      recipient,
+      executeAt: new Date(Date.now() + 2 * 60 * 1000), // 2 minutes from now
+      requiresApproval: false
+    };
+
+    // Create calendar event
+    const eventResponse = await calendarService.createEvent(
+      `Send ${amount} ${token} to ${recipient}`,
+      request.executeAt,
+      `REAL Transaction: Send ${amount} ${token} to ${recipient}`
+    );
+
+    // Execute real transaction immediately for demo
+    const txHash = await aptosWalletService.createCalendarTransaction(
+      CALENDAR_ID,
+      eventResponse.eventId,
+      request
+    );
+
+    res.json({
+      success: true,
+      message: `REAL transaction executed! Hash: ${txHash}`,
+      eventId: eventResponse.eventId,
+      transactionHash: txHash,
+      explorerUrl: `https://explorer.aptoslabs.com/txn/${txHash}?network=testnet`,
+      executeTime: request.executeAt.toISOString()
+    });
+
+  } catch (error: any) {
+    console.error("Real transaction error:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Add transaction status endpoint
+app.get('/aptos/transaction/:hash', async (req, res) => {
+  try {
+    const { hash } = req.params;
+    const status = await aptosWalletService.getTransactionStatus(hash);
+    
+    res.json({
+      success: true,
+      transactionHash: hash,
+      status,
+      explorerUrl: `https://explorer.aptoslabs.com/txn/${hash}?network=testnet`
+    });
+  } catch (error: any) {
+    console.error("Error getting transaction status:", error);
     res.status(500).json({
       success: false,
       error: error.message

@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CalendeFi - Wallet Connection</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-2xl mx-auto">
+            <!-- Header -->
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-bold text-gray-800 mb-2">💳 Wallet Management</h1>
+                <p class="text-gray-600">Connect your wallet and manage recipient addresses</p>
+            </div>
+
+            <!-- Current Wallet Section -->
+            <div class="bg-white rounded-lg shadow p-6 mb-6">
+                <h2 class="text-xl font-semibold mb-4">🔐 Current Calendar Wallet</h2>
+                <div id="calendarWallet" class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600">Address:</span>
+                        <span id="walletAddress" class="font-mono text-sm bg-gray-100 px-2 py-1 rounded">Loading...</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600">Balance:</span>
+                        <span id="walletBalance" class="font-semibold">Loading...</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600">Network:</span>
+                        <span class="text-green-600">Aptos Testnet</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- External Wallet Connection -->
+            <div class="bg-white rounded-lg shadow p-6 mb-6">
+                <h2 class="text-xl font-semibold mb-4">🌐 Connect External Wallet</h2>
+                <p class="text-gray-600 mb-4">Connect your Petra or Martian wallet to receive payments:</p>
+                
+                <div class="space-y-3">
+                    <button id="connectPetra" class="w-full bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors">
+                        🦋 Connect Petra Wallet
+                    </button>
+                    <button id="connectMartian" class="w-full bg-purple-600 text-white px-4 py-3 rounded-lg hover:bg-purple-700 transition-colors">
+                        🚀 Connect Martian Wallet
+                    </button>
+                </div>
+
+                <div id="connectedWallet" class="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg hidden">
+                    <h3 class="font-semibold text-green-800 mb-2">✅ Connected Wallet</h3>
+                    <div class="space-y-2">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Address:</span>
+                            <span id="connectedAddress" class="font-mono text-sm"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Balance:</span>
+                            <span id="connectedBalance" class="font-semibold"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recipient Address Book -->
+            <div class="bg-white rounded-lg shadow p-6 mb-6">
+                <h2 class="text-xl font-semibold mb-4">📖 Recipient Address Book</h2>
+                <p class="text-gray-600 mb-4">Manage addresses for calendar transactions:</p>
+                
+                <!-- Add New Address -->
+                <div class="mb-4 p-4 bg-gray-50 rounded-lg">
+                    <h3 class="font-semibold mb-3">Add New Recipient</h3>
+                    <div class="space-y-3">
+                        <input 
+                            type="text" 
+                            id="recipientName" 
+                            placeholder="Recipient Name (e.g., Alice)"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                        <input 
+                            type="text" 
+                            id="recipientAddress" 
+                            placeholder="0x... (Aptos address)"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                        <button id="addRecipient" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
+                            ➕ Add Recipient
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Recipients List -->
+                <div id="recipientsList" class="space-y-2">
+                    <!-- Recipients will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Navigation -->
+            <div class="flex space-x-4">
+                <a href="schedule.html" class="flex-1 bg-blue-600 text-white text-center px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors">
+                    📅 Schedule Payments
+                </a>
+                <a href="monitor.html" class="flex-1 bg-green-600 text-white text-center px-4 py-3 rounded-lg hover:bg-green-700 transition-colors">
+                    📊 Monitor Transactions
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State management
+        let connectedExternalWallet = null;
+        let recipients = JSON.parse(localStorage.getItem('calendefi_recipients') || '[]');
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadCalendarWallet();
+            loadRecipients();
+            setupEventListeners();
+        });
+
+        // Load calendar wallet info
+        async function loadCalendarWallet() {
+            try {
+                const response = await fetch('/aptos/wallet');
+                const wallet = await response.json();
+                
+                document.getElementById('walletAddress').textContent = 
+                    wallet.address.slice(0, 16) + '...' + wallet.address.slice(-8);
+                document.getElementById('walletBalance').textContent = wallet.balance + ' APT';
+            } catch (error) {
+                console.error('Error loading wallet:', error);
+                document.getElementById('walletAddress').textContent = 'Error loading';
+                document.getElementById('walletBalance').textContent = 'Error';
+            }
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            document.getElementById('connectPetra').addEventListener('click', connectPetra);
+            document.getElementById('connectMartian').addEventListener('click', connectMartian);
+            document.getElementById('addRecipient').addEventListener('click', addRecipient);
+        }
+
+        // Connect to Petra Wallet
+        async function connectPetra() {
+            try {
+                if (typeof window.aptos === 'undefined') {
+                    alert('Petra wallet not found. Please install Petra wallet extension.');
+                    window.open('https://petra.app/', '_blank');
+                    return;
+                }
+
+                const response = await window.aptos.connect();
+                connectedExternalWallet = {
+                    address: response.address,
+                    publicKey: response.publicKey,
+                    provider: 'petra'
+                };
+
+                displayConnectedWallet(connectedExternalWallet);
+                
+                // Get balance
+                const balance = await getWalletBalance(response.address);
+                document.getElementById('connectedBalance').textContent = balance + ' APT';
+                
+            } catch (error) {
+                console.error('Petra connection error:', error);
+                alert('Failed to connect to Petra wallet: ' + error.message);
+            }
+        }
+
+        // Connect to Martian Wallet
+        async function connectMartian() {
+            try {
+                if (typeof window.martian === 'undefined') {
+                    alert('Martian wallet not found. Please install Martian wallet extension.');
+                    window.open('https://martianwallet.xyz/', '_blank');
+                    return;
+                }
+
+                const response = await window.martian.connect();
+                connectedExternalWallet = {
+                    address: response.address,
+                    publicKey: response.publicKey,
+                    provider: 'martian'
+                };
+
+                displayConnectedWallet(connectedExternalWallet);
+                
+                // Get balance
+                const balance = await getWalletBalance(response.address);
+                document.getElementById('connectedBalance').textContent = balance + ' APT';
+                
+            } catch (error) {
+                console.error('Martian connection error:', error);
+                alert('Failed to connect to Martian wallet: ' + error.message);
+            }
+        }
+
+        // Display connected wallet
+        function displayConnectedWallet(wallet) {
+            document.getElementById('connectedWallet').classList.remove('hidden');
+            document.getElementById('connectedAddress').textContent = 
+                wallet.address.slice(0, 16) + '...' + wallet.address.slice(-8);
+        }
+
+        // Get wallet balance
+        async function getWalletBalance(address) {
+            try {
+                const response = await fetch(`/aptos/balance/${address}`);
+                const data = await response.json();
+                return (data.balance / 100000000).toFixed(8);
+            } catch (error) {
+                console.error('Error getting balance:', error);
+                return '0.00000000';
+            }
+        }
+
+        // Add recipient
+        function addRecipient() {
+            const name = document.getElementById('recipientName').value.trim();
+            const address = document.getElementById('recipientAddress').value.trim();
+
+            if (!name || !address) {
+                alert('Please enter both name and address');
+                return;
+            }
+
+            if (!address.startsWith('0x') || address.length !== 66) {
+                alert('Please enter a valid Aptos address (starts with 0x and 66 characters total)');
+                return;
+            }
+
+            // Check if already exists
+            if (recipients.find(r => r.address.toLowerCase() === address.toLowerCase())) {
+                alert('This address is already in your address book');
+                return;
+            }
+
+            // Add to recipients
+            recipients.push({ name, address, addedAt: new Date().toISOString() });
+            localStorage.setItem('calendefi_recipients', JSON.stringify(recipients));
+
+            // Clear inputs
+            document.getElementById('recipientName').value = '';
+            document.getElementById('recipientAddress').value = '';
+
+            // Reload list
+            loadRecipients();
+        }
+
+        // Load recipients list
+        function loadRecipients() {
+            const container = document.getElementById('recipientsList');
+            
+            if (recipients.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-4">No recipients added yet</p>';
+                return;
+            }
+
+            container.innerHTML = recipients.map((recipient, index) => `
+                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                        <div class="font-semibold">${recipient.name}</div>
+                        <div class="text-sm text-gray-600 font-mono">${recipient.address.slice(0, 16)}...${recipient.address.slice(-8)}</div>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button onclick="copyAddress('${recipient.address}')" class="text-blue-600 hover:text-blue-800">
+                            📋 Copy
+                        </button>
+                        <button onclick="removeRecipient(${index})" class="text-red-600 hover:text-red-800">
+                            🗑️ Remove
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Copy address to clipboard
+        function copyAddress(address) {
+            navigator.clipboard.writeText(address).then(() => {
+                alert('Address copied to clipboard!');
+            });
+        }
+
+        // Remove recipient
+        function removeRecipient(index) {
+            if (confirm('Are you sure you want to remove this recipient?')) {
+                recipients.splice(index, 1);
+                localStorage.setItem('calendefi_recipients', JSON.stringify(recipients));
+                loadRecipients();
+            }
+        }
+
+        // Add connected wallet as recipient
+        function addConnectedWallet() {
+            if (!connectedExternalWallet) {
+                alert('No wallet connected');
+                return;
+            }
+
+            const name = prompt('Enter a name for this wallet:', 'My ' + connectedExternalWallet.provider + ' Wallet');
+            if (!name) return;
+
+            recipients.push({
+                name,
+                address: connectedExternalWallet.address,
+                addedAt: new Date().toISOString(),
+                source: 'connected_wallet'
+            });
+
+            localStorage.setItem('calendefi_recipients', JSON.stringify(recipients));
+            loadRecipients();
+        }
+    </script>
+</body>
+</html>

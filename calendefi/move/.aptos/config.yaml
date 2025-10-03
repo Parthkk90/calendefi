@@ -1,8 +1,14 @@
 ---
 profiles:
+  agent:
+    network: Testnet
+    private_key: ed25519-priv-0x15c8d30b73bf28c00b68e640b6017896e70a2bf0e55e3fa639e8772e121c3253
+    public_key: ed25519-pub-0xacdee674279f1dd9ee651f602b05f2d317a4779b79a57d39c7a49ff238cdf365
+    account: 8dd4f89ac22a7e17a8556adb4df57e1691199afcb419de4c039507b68736cdb4
+    rest_url: "https://fullnode.testnet.aptoslabs.com"
   default:
-    private_key: "0xd61e37366a09015c5c7f4bbdf3feb2874d4130bb11056e7c0584ec76731472d3"
-    public_key: "0x6add33ce3cae4d81041e4b594cced7d8b618a198410ce00462cf06c3e34b8135"
+    private_key: ed25519-priv-0xd61e37366a09015c5c7f4bbdf3feb2874d4130bb11056e7c0584ec76731472d3
+    public_key: ed25519-pub-0x6add33ce3cae4d81041e4b594cced7d8b618a198410ce00462cf06c3e34b8135
     account: ea3da9b962d9407f324c2a854adf7d653f29e2ce7fe6f3d464a01a9ce8d91f03
     rest_url: "https://fullnode.testnet.aptoslabs.com"
     faucet_url: "https://faucet.testnet.aptoslabs.com"

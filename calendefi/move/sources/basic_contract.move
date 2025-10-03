@@ -1,12 +1,13 @@
 module calendefi::simple_calendar {
-    use std::string;
+    use std::signer;
     use aptos_framework::coin;
     use aptos_framework::aptos_coin::AptosCoin;
-    use aptos_framework::signer;
     
     // Error codes
     const EINVALID_AMOUNT: u64 = 1;
     const EINVALID_RECIPIENT: u64 = 2;
+    const ETRANSACTION_NOT_FOUND: u64 = 3;
+    const EALREADY_EXECUTED: u64 = 4;
     
     // Calendar transaction resource
     struct CalendarTx has key {
@@ -34,13 +35,13 @@ module calendefi::simple_calendar {
         let sender_addr = signer::address_of(account);
         
         // Check if transaction exists
-        assert!(exists<CalendarTx>(sender_addr), 0);
+        assert!(exists<CalendarTx>(sender_addr), ETRANSACTION_NOT_FOUND);
         
         // Get transaction details
         let calendar_tx = borrow_global_mut<CalendarTx>(sender_addr);
         
         // Check if already executed
-        assert!(!calendar_tx.executed, 0);
+        assert!(!calendar_tx.executed, EALREADY_EXECUTED);
         
         // Execute APT transfer
         coin::transfer<AptosCoin>(

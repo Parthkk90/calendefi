@@ -1,8 +1,20 @@
 ---
 profiles:
+  agent:
+    network: Testnet
+    private_key: ed25519-priv-0x15c8d30b73bf28c00b68e640b6017896e70a2bf0e55e3fa639e8772e121c3253
+    public_key: ed25519-pub-0xacdee674279f1dd9ee651f602b05f2d317a4779b79a57d39c7a49ff238cdf365
+    account: 8dd4f89ac22a7e17a8556adb4df57e1691199afcb419de4c039507b68736cdb4
+    rest_url: "https://fullnode.testnet.aptoslabs.com"
+  calendar:
+    network: Testnet
+    private_key: ed25519-priv-0x8dd4f89ac22a7e17a8556adb4df57e1691199afcb419de4c039507b68736cdb4
+    public_key: ed25519-pub-0x2578a33726305e21baa907ba2b275f7255782e2b211642b6ff2704a327a96f75
+    account: d132084904ff31ed71e483239ba76477ad0b7e32830e7dd00bd040e8a2d9fc75
+    rest_url: "https://fullnode.testnet.aptoslabs.com"
   calendefi:
-    private_key: "0x777580ddcfc94351d776fad2970809e8763a0211be49cb4f006c2eec312ab1e3"
-    public_key: "0xec3ce518afb28c1b39e2e9aeae5a22b53d005b6e806968b04fbdaf87ec281386"
+    private_key: ed25519-priv-0x777580ddcfc94351d776fad2970809e8763a0211be49cb4f006c2eec312ab1e3
+    public_key: ed25519-pub-0xec3ce518afb28c1b39e2e9aeae5a22b53d005b6e806968b04fbdaf87ec281386
     account: 5cde772759e6872bf4de85ed6bf51cd19250e7406d92378e5322971d8cef22a8
     rest_url: "https://fullnode.testnet.aptoslabs.com"
     faucet_url: "https://faucet.testnet.aptoslabs.com"
