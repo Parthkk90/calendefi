@@ -18,10 +18,24 @@ dist/
 .env.development.local
 .env.test.local
 .env.production.local
+.env.aptos
 
+# Google OAuth & API credentials - IMPORTANT!
+tokens.json
+**/tokens.json
 calendefi/agent/tokens.json
 calendefi/agent/.env.aptos
 calendefi/agent/.env
+client_secret*.json
+credentials.json
+token.json
+
+# Aptos & Blockchain credentials
+.aptos/
+**/.aptos/
+*.yaml
+move/.aptos/
+**/move/.aptos/
 
 # IDE and editors
 .vscode/
@@ -117,10 +131,18 @@ client_secret*.json
 .env.development.local
 .env.production.local
 
+# Move contract build artifacts
+move/build/
+move/.movement/
+**/move/build/
+**/move/.movement/
+
 # Test files
 test-results/
 playwright-report/
 test-results.xml
+test_*.js
+*_test.js
 
 # Database
 *.sqlite
@@ -128,3 +150,7 @@ test-results.xml
 
 # Local Netlify folder
 .netlify
+
+# Additional security exclusions
+calendefi/agent/tokens.json
+calendefi/agent/.env.aptos
