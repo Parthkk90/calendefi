@@ -559,6 +559,117 @@ app.get('/aptos/transaction/:hash', async (req, res) => {
   }
 });
 
+// Add this endpoint after your existing endpoints in aptosCalendarAgent.ts
+app.post("/aptos/start-monitoring", async (req, res) => {
+  try {
+    if (!calendarService.isAuthenticated()) {
+      return res.status(401).json({
+        success: false,
+        error: "Not authenticated with Google Calendar"
+      });
+    }
+
+    console.log("🔄 Manually starting calendar monitoring...");
+    await monitorCalendar();
+    
+    res.json({
+      success: true,
+      message: "Calendar monitoring started successfully",
+      isMonitoring: isMonitoring
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Add immediate calendar check endpoint
+app.post("/aptos/check-calendar-now", async (req, res) => {
+  try {
+    if (!calendarService.isAuthenticated()) {
+      return res.status(401).json({
+        success: false,
+        error: "Not authenticated"
+      });
+    }
+
+    console.log("🔍 Checking calendar for transaction events right now...");
+    
+    const events = await calendarService.getEvents();
+    console.log(`📊 Found ${events.length} total calendar events`);
+    
+    const now = new Date();
+    let detectedTransactions = 0;
+    let executedTransactions = 0;
+
+    for (const event of events) {
+      if (!event.summary || !event.start) continue;
+
+      console.log(`📅 Checking event: "${event.summary}"`);
+      
+      const parsed = parseTransactionIntent(event);
+      if (parsed) {
+        detectedTransactions++;
+        console.log(`💰 DETECTED TRANSACTION: ${event.summary}`);
+        console.log(`   - Amount: ${parsed.amount} ${parsed.token}`);
+        console.log(`   - Recipient: ${parsed.recipient}`);
+        console.log(`   - Scheduled: ${parsed.executeAt}`);
+        
+        const executeTime = parsed.executeAt;
+        
+        // Check if it's time to execute (within 5 minute window)
+        if (executeTime <= now && executeTime > new Date(now.getTime() - 5 * 60 * 1000)) {
+          console.log(`⏰ EXECUTING NOW: ${event.summary}`);
+          
+          try {
+            const txHash = await aptosWalletService.createCalendarTransaction(
+              CALENDAR_ID,
+              event.id || "",
+              {
+                type: parsed.type,
+                amount: parsed.amount,
+                token: parsed.token,
+                recipient: parsed.recipient,
+                executeAt: parsed.executeAt,
+                requiresApproval: parsed.requiresApproval,
+                approvers: parsed.approvers,
+              } as AptosTransactionRequest
+            );
+
+            console.log(`✅ TRANSACTION EXECUTED: ${txHash}`);
+            console.log(`🔗 Explorer: https://explorer.aptoslabs.com/txn/${txHash}?network=testnet`);
+            executedTransactions++;
+            
+          } catch (error: any) {
+            console.error(`❌ Transaction failed: ${error.message}`);
+          }
+        } else if (executeTime > now) {
+          console.log(`⏳ SCHEDULED FOR FUTURE: ${executeTime.toLocaleString()}`);
+        } else {
+          console.log(`⏰ PAST EVENT (outside execution window)`);
+        }
+      }
+    }
+
+    res.json({
+      success: true,
+      totalEvents: events.length,
+      detectedTransactions,
+      executedTransactions,
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error: any) {
+    console.error("Error checking calendar:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 // Start server
 app.listen(PORT, () => {
   console.log(`🚀 CalendeFi Aptos Agent running on port ${PORT}`);
