@@ -437,36 +437,16 @@ DEBUG=* npm run dev
 DEBUG=calendar* npm run dev
 DEBUG=wallet* npm run dev
 ```
-## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+## 📞 Support - 9545296699
 
-## 🙏 Acknowledgments
+- 📧 **Email**: parth122004@gmail.com
+- 💬 **Discord**: [CalendeFi Community](mavrick_95)
+- 🐦 **Twitter**: [@CalendeFi](https://x.com/KkParth950)
 
-- **Aptos Labs** - For the amazing Aptos blockchain platform
-- **Google Calendar API** - For enabling seamless calendar integration
-- **Community Contributors** - For testing and feedback
-- **Open Source Libraries** - All the amazing packages that made this possible
-
-## 📞 Support
-
-- 📧 **Email**: support@calendefi.com
-- 💬 **Discord**: [CalendeFi Community](https://discord.gg/calendefi)
-- 🐦 **Twitter**: [@CalendeFi](https://twitter.com/calendefi)
-- 🐛 **Issues**: [GitHub Issues](https://github.com/Parthkk90/calendefi/issues)
 
 ---
 
 **Made with ❤️ for the Aptos ecosystem**
-
-[🌟 Star this repo](https://github.com/Parthkk90/calendefi) | [🐛 Report Bug](https://github.com/Parthkk90/calendefi/issues) | [💡 Request Feature](https://github.com/Parthkk90/calendefi/issues/new)
-
-## 🎯 Quick Links
-
-- 🚀 [Live Demo](http://localhost:3001) (when running locally)
-- 📖 [Documentation](https://github.com/Parthkk90/calendefi/wiki)
-- 🎥 [Video Tutorial](https://youtube.com/calendefi)
-- 🛠️ [Developer Guide](https://github.com/Parthkk90/calendefi/blob/main/DEVELOPER.md)
-- 🔐 [Security Policy](https://github.com/Parthkk90/calendefi/security)
 
 **Start scheduling your crypto payments today with CalendeFi!** 🚀
